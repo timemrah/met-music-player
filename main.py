@@ -74,7 +74,7 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
         Gst.init(None)
         factory = Gst.ElementFactory.find("playbin3")
         self.player = Gst.ElementFactory.make("playbin3" if factory else "playbin", "player")
-        self.player.set_property("volume", 0.8)
+        self.player.set_property("volume", 1.0)
         bus = self.player.get_bus()
         bus.add_signal_watch()
         bus.connect("message::eos", self._on_eos)
