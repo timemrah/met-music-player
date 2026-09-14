@@ -6,7 +6,7 @@
 - Tekli mp3 dosyaları da sürükle-bırak ile eklenebilir
 - Çift tıklama ile çalma, sıra ile otomatik devam, karışık çalma modu
 - Önceki / Oynat-Duraklat / Sonraki, süre çubuğu (seek)
-- Çalarken süre çubuğu altında ekolayzer animasyonu
+- Çalarken gerçek spektrum verisiyle ekolayzer animasyonu
 - Playlist oturumlar arası saklanır (~/.config/mp3-player/playlist.json)
 """
 import json
@@ -81,6 +81,8 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
         bus.add_signal_watch()
         bus.connect("message::eos", self._on_eos)
         bus.connect("message::error", self._on_error)
+        bus.connect("message::element", self._on_element)
+        self._spectrum = self._setup_spectrum_sink()
 
         self.playlist = []  # {"path": str, "title": str, "duration": float|None}
         self.current = -1
@@ -388,6 +390,47 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
         GLib.idle_add(self.play_next)
         return True
 
+    def _setup_spectrum_sink(self):
+        """Ses zincirine spectrum öğesi ekler; olmazsa None (dekoratif moda düşülür)."""
+        try:
+            reg = Gst.Registry.get()
+            if reg.find_feature("spectrum", Gst.ElementFactory) is None:
+                return None
+            if reg.find_feature("audioconvert", Gst.ElementFactory) is None:
+                return None
+            sink = Gst.parse_bin_from_description(
+                "audioconvert ! spectrum name=eq_sp bands=28 "
+                "threshold=-60 interval=100000000 post-messages=true "
+                "! audioconvert ! autoaudiosink",
+                True,
+            )
+            if sink.get_by_name("eq_sp") is None:
+                return None
+            self.player.set_property("audio-sink", sink)
+            return sink.get_by_name("eq_sp")
+        except Exception as err:
+            print(f"Gerçek spektrum kurulamadı, dekoratif animasyon kullanılacak: {err}")
+            return None
+
+    def _on_element(self, _bus, msg):
+        if self._spectrum is None:
+            return True
+        st = msg.get_structure()
+        if st is None or st.get_name() != "spectrum":
+            return True
+        try:
+            mags = list(st.get_value("magnitude"))
+        except Exception:
+            return True
+        if not mags:
+            return True
+        if len(self._eq_levels) != len(mags):
+            self._eq_levels = [0.0] * len(mags)
+        for i, db in enumerate(mags):
+            self._eq_levels[i] = max(0.0, min(1.0, (float(db) + 60.0) / 60.0))
+        self.eq_area.queue_draw()
+        return True
+
     # ---- Süre çubuğu / ses ----
     def _position_sec(self):
         ok, pos = self.player.query_position(Gst.Format.TIME)
@@ -427,6 +470,17 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
 
     # ---- Ekolayzer animasyonu ----
     def _eq_tick(self):
+        if self._spectrum is None:
+            self._eq_fake()
+            return True
+        # Gerçek veri spectrum mesajlarıyla gelir; duraklayınca çubukları söndür
+        if not self.playing and any(lv > 0.003 for lv in self._eq_levels):
+            self._eq_levels = [max(0.0, lv - 0.08) for lv in self._eq_levels]
+            self.eq_area.queue_draw()
+        return True
+
+    def _eq_fake(self):
+        """Gerçek spektrum kurulamazsa kullanılan dekoratif animasyon."""
         n = 28
         if len(self._eq_levels) != n:
             self._eq_levels = [0.0] * n
@@ -443,7 +497,6 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
             self._eq_levels[i] = lv
         if changed or self.playing:
             self.eq_area.queue_draw()
-        return True
 
     def _draw_eq(self, _area, cr, width, height, _data):
         n = len(self._eq_levels) or 1

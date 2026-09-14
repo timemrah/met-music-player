@@ -56,9 +56,43 @@ class TestNoVolumeBar(unittest.TestCase):
             self.assertIsInstance(win.eq_area, M.Gtk.DrawingArea)
             self.assertEqual(win.btn_row.get_halign(), M.Gtk.Align.START)
             self.assertTrue(win._eq_tick())
-            win.playing = True
-            self.assertTrue(win._eq_tick())
-            self.assertEqual(len(win._eq_levels), 28)
+            if win._spectrum is None:
+                # Dekoratif mod: tick seviyeleri üretir
+                win.playing = True
+                self.assertTrue(win._eq_tick())
+                self.assertEqual(len(win._eq_levels), 28)
+            else:
+                # Gerçek mod: seviyeler spectrum mesajıyla gelir (dB -> 0..1)
+                class FakeStruct:
+                    def get_name(self):
+                        return "spectrum"
+
+                    def get_value(self, key):
+                        assert key == "magnitude"
+                        return [-60.0, -30.0, -6.0] + [-60.0] * 25
+
+                class FakeMsg:
+                    def get_structure(self):
+                        return FakeStruct()
+
+                win._on_element(None, FakeMsg())
+                self.assertEqual(len(win._eq_levels), 28)
+                self.assertAlmostEqual(win._eq_levels[0], 0.0)
+                self.assertAlmostEqual(win._eq_levels[1], 0.5)
+                self.assertAlmostEqual(win._eq_levels[2], 0.9)
+        finally:
+            win.close()
+
+    def test_gercek_spektrum_bagli(self):
+        """Ses zincirinde gerçek veri için spectrum öğesi kurulu olmalı."""
+        from gi.repository import Gst
+        Gst.init(None)
+        if Gst.Registry.get().find_feature("spectrum", Gst.ElementFactory) is None:
+            self.skipTest("spectrum öğesi yok")
+        app = M.Mp3PlayerApp()
+        win = M.Mp3PlayerWindow(app)
+        try:
+            self.assertIsNotNone(win._spectrum)
         finally:
             win.close()
 
