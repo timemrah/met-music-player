@@ -1,6 +1,6 @@
 [Desktop Entry]
-Name=MP3 Çalar
-Comment=Sade modern MP3 çalar (playlist, sürükle-bırak, karışık çalma)
+Name=MET Music Player
+Comment=Sade modern müzik çalar (playlist, sürükle-bırak, karışık çalma)
 Exec=mp3-player
 Icon=mp3-player
 Terminal=false

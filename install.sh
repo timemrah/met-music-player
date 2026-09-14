@@ -11,5 +11,5 @@ sed "s|^Exec=.*|Exec=$HOME/.local/bin/mp3-player|" "$HERE/mp3player.desktop" \
   > "$HOME/.local/share/applications/mp3player.desktop"
 gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor/" 2>/dev/null || true
 update-desktop-database "$HOME/.local/share/applications/" 2>/dev/null || true
-echo "Kuruldu: uygulamalar menüsünde 'MP3 Çalar' olarak bulunur."
+echo "Kuruldu: uygulamalar menüsünde 'MET Music Player' olarak bulunur."
 echo "Uçbirimden çalıştırmak için: mp3-player  (~/.local/bin PATH'te olmalı)"

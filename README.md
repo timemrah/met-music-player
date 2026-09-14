@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="logo.svg" width="128" alt="MP3 Player logo">
+  <img src="logo.svg" width="128" alt="MET Music Player logo">
 </p>
 
 <p align="center">
-  <img src="screenshot.png" width="600" alt="MP3 Player playing with live spectrum analyzer">
+  <img src="screenshot.png" width="600" alt="MET Music Player playing with live spectrum analyzer">
 </p>
 
-<h1 align="center">MP3 Player</h1>
+<h1 align="center">MET Music Player</h1>
 
 <p align="center">
   A minimal, modern MP3 player for Debian 13 + GNOME.<br>
@@ -49,7 +49,7 @@ Requirements (pre-installed on Debian 13): `python3-gi`,
 ./install.sh
 ```
 
-This adds "MP3 Çalar" to the applications menu, installs the logo as its
+This adds "MET Music Player" to the applications menu, installs the logo as its
 icon, and puts the `mp3-player` command under `~/.local/bin`.
 Run `uninstall.sh` to remove everything.
 
@@ -103,7 +103,7 @@ Gerekenler (Debian 13'te öntanımlı kurulu): `python3-gi`,
 ./install.sh
 ```
 
-Bu, uygulamalar menüsüne "MP3 Çalar" ekler, logoyu simge olarak kurar ve
+Bu, uygulamalar menüsüne "MET Music Player" ekler, logoyu simge olarak kurar ve
 `mp3-player` komutunu `~/.local/bin` altına koyar.
 Kaldırmak için `uninstall.sh` çalıştırın.
 

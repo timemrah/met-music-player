@@ -147,7 +147,7 @@ def log_rebin(mags):
 class Mp3PlayerWindow(Adw.ApplicationWindow):
     def __init__(self, app):
         super().__init__(application=app)
-        self.set_title("MP3 Çalar")
+        self.set_title("MET Music Player")
         self.set_icon_name("mp3-player")
         self.set_default_size(720, 540)
 
@@ -184,7 +184,7 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
         self.set_content(root)
 
         header = Adw.HeaderBar()
-        header.set_title_widget(Gtk.Label(label="MP3 Çalar"))
+        header.set_title_widget(Gtk.Label(label="MET Music Player"))
         root.append(header)
 
         btn_folder = Gtk.Button(icon_name="folder-open-symbolic", tooltip_text="Klasör aç")
