@@ -94,10 +94,10 @@ def peak_step(peak, hold_until, level, now, dt, fall=_SPEC_FALL_PER_SEC):
 
 
 _LOG_BARS = 28
-_LOG_FMIN = 40.0
-_LOG_FMAX = 12000.0
+_LOG_FMIN = 30.0
+_LOG_FMAX = 16000.0
 _LOG_NYQ = 22050.0
-_LOG_LIN_BANDS = 256
+_LOG_LIN_BANDS = 2048
 
 
 def _log_groups(lin_bands=_LOG_LIN_BANDS, bars=_LOG_BARS,
@@ -114,15 +114,20 @@ def _log_groups(lin_bands=_LOG_LIN_BANDS, bars=_LOG_BARS,
     return groups
 
 
-_LOG_GROUPS = _log_groups()
+_GROUPS_CACHE = {_LOG_LIN_BANDS: _log_groups()}
 
 
 def log_rebin(mags):
-    """256 lineer bandı 28 logaritmik bara indirir (grup içi tepe değerle)."""
+    """Lineer bantları 28 logaritmik bara indirir (grup içi tepe değerle)."""
     mags = list(mags)
-    if len(mags) != _LOG_LIN_BANDS:
-        return (mags[:_LOG_BARS] + [-120.0] * _LOG_BARS)[:_LOG_BARS]
-    return [max(mags[k] for k in grp) for grp in _LOG_GROUPS]
+    n = len(mags)
+    if n == _LOG_BARS:
+        return mags
+    grp = _GROUPS_CACHE.get(n)
+    if grp is None:
+        grp = _log_groups(lin_bands=n)
+        _GROUPS_CACHE[n] = grp
+    return [max(mags[k] for k in g) for g in grp]
 
 
 class Mp3PlayerWindow(Adw.ApplicationWindow):
@@ -466,7 +471,7 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
             if reg.find_feature("audioconvert", Gst.ElementFactory) is None:
                 return None
             sink = Gst.parse_bin_from_description(
-                "audioconvert ! spectrum name=eq_sp bands=256 "
+                "audioconvert ! spectrum name=eq_sp bands=2048 "
                 "threshold=-48 interval=16666667 post-messages=true "
                 "! audioconvert ! autoaudiosink",
                 True,

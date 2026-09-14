@@ -141,26 +141,41 @@ class TestPeakStep(unittest.TestCase):
 
 
 class TestLogRebin(unittest.TestCase):
+    def _bin(self, freq):
+        return int(freq / (M._LOG_NYQ / M._LOG_LIN_BANDS))
+
+    def _tone(self, freq, db=-6.0):
+        mags = [-60.0] * M._LOG_LIN_BANDS
+        mags[self._bin(freq)] = db
+        return mags
+
     def test_uzunluk(self):
-        self.assertEqual(len(M.log_rebin([-60.0] * 256)), 28)
+        self.assertEqual(len(M.log_rebin([-60.0] * M._LOG_LIN_BANDS)), 28)
 
     def test_kisa_girdi_doldurulur(self):
         self.assertEqual(len(M.log_rebin([-30.0] * 10)), 28)
 
     def test_tiz_ton_sag_yarida(self):
-        mags = [-60.0] * 256
-        mags[74] = -6.0  # ~6400 Hz
-        bars = M.log_rebin(mags)
+        bars = M.log_rebin(self._tone(6400))
         self.assertAlmostEqual(max(bars), -6.0)
         loud = [i for i, v in enumerate(bars) if v > -20.0]
         self.assertTrue(loud and min(loud) > 10, loud)
 
     def test_pes_ton_sol_yarida(self):
-        mags = [-60.0] * 256
-        mags[3] = -6.0  # ~220 Hz
-        bars = M.log_rebin(mags)
+        bars = M.log_rebin(self._tone(220))
         loud = [i for i, v in enumerate(bars) if v > -20.0]
         self.assertTrue(loud and max(loud) < 14, loud)
+
+    def test_kick_tonu_tek_barda(self):
+        bars = M.log_rebin(self._tone(45))
+        loud = [i for i, v in enumerate(bars) if v > -20.0]
+        self.assertEqual(len(loud), 1, loud)
+        self.assertLessEqual(loud[0], 3, loud)
+
+    def test_14khz_en_sagda(self):
+        bars = M.log_rebin(self._tone(14000))
+        loud = [i for i, v in enumerate(bars) if v > -20.0]
+        self.assertIn(27, loud, loud)
 
     def test_gercek_spektrum_bagli(self):
         """Ses zincirinde gerçek veri için spectrum öğesi kurulu olmalı."""
