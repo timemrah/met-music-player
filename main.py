@@ -81,7 +81,7 @@ def track_info(path):
     return title, duration
 
 
-_SPEC_FLOOR_DB = -54.0
+_SPEC_FLOOR_DB = -57.0
 _SPEC_FALL_PER_SEC = 0.8
 
 
@@ -93,7 +93,7 @@ def spec_level(db, index, bands):
         return 0.0
     if db <= _SPEC_FLOOR_DB + 1.0:
         return 0.0
-    base = ((db - _SPEC_FLOOR_DB) / -_SPEC_FLOOR_DB) ** 0.8
+    base = (db - _SPEC_FLOOR_DB) / -_SPEC_FLOOR_DB
     comp = 1.0 + 1.2 * (index / max(1, bands - 1))
     return max(0.0, min(1.0, base * comp))
 
@@ -486,7 +486,7 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
                 return None
             sink = Gst.parse_bin_from_description(
                 "audioconvert ! spectrum name=eq_sp bands=2048 "
-                "threshold=-54 interval=16666667 post-messages=true "
+                "threshold=-57 interval=16666667 post-messages=true "
                 "! audioconvert ! autoaudiosink",
                 True,
             )
