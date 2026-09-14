@@ -9,7 +9,7 @@ sistemde zaten kurulu olan GTK4 + Libadwaita + GStreamer kullanır.
 - Tekli MP3 dosyaları da sürükle-bırak ile eklenebilir
 - **Çift tıklama** ile çalma
 - Sıralı otomatik devam + **karışık çal** düğmesi
-- Önceki / Oynat-Duraklat / Sonraki, süre çubuğu, ses düzeyi
+- Önceki / Oynat-Duraklat / Sonraki, süre çubuğu (ses düzeyi sistemden ayarlanır)
 - Delete tuşu ile seçili parçayı listeden çıkarma, tek tuşla listeyi temizleme
 - Playlist otomatik saklanır (`~/.config/mp3-player/playlist.json`)
 

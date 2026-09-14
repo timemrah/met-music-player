@@ -5,7 +5,7 @@
 - Klasörü pencereye sürükle-bırak -> içindeki mp3'ler playliste eklenir
 - Tekli mp3 dosyaları da sürükle-bırak ile eklenebilir
 - Çift tıklama ile çalma, sıra ile otomatik devam, karışık çalma modu
-- Önceki / Oynat-Duraklat / Sonraki, süre çubuğu (seek), ses düzeyi
+- Önceki / Oynat-Duraklat / Sonraki, süre çubuğu (seek)
 - Playlist oturumlar arası saklanır (~/.config/mp3-player/playlist.json)
 """
 import json
@@ -192,14 +192,6 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
         btn_next = Gtk.Button(icon_name="media-skip-forward-symbolic", tooltip_text="Sonraki")
         btn_next.connect("clicked", lambda *_: self.play_next(manual=True))
         btn_row.append(btn_next)
-
-        self.volume = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
-        self.volume.set_value(80)
-        self.volume.set_size_request(120, -1)
-        self.volume.set_draw_value(False)
-        self.volume.set_tooltip_text("Ses düzeyi")
-        self.volume.connect("value-changed", self._on_volume)
-        btn_row.append(self.volume)
 
     def _setup_dnd(self):
         drop = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
@@ -394,9 +386,6 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
             return False
         self._seek_fraction(value / 1000.0)
         return False
-
-    def _on_volume(self, scale):
-        self.player.set_property("volume", scale.get_value() / 100.0)
 
     def _tick(self):
         ok_d, dur = self.player.query_duration(Gst.Format.TIME)
