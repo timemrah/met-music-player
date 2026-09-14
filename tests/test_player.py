@@ -115,8 +115,8 @@ class TestSpecMapping(unittest.TestCase):
         low = M.spec_level(-36.0, 0, 28)
         high = M.spec_level(-36.0, 27, 28)
         self.assertGreater(high, low)
-        self.assertTrue(0.30 < low < 0.36, low)
-        self.assertTrue(0.70 < high < 0.75, high)
+        self.assertTrue(0.40 < low < 0.43, low)
+        self.assertTrue(0.90 < high < 0.93, high)
 
     def test_db_arttikca_seviye_artar(self):
         vals = [M.spec_level(db, 10, 28) for db in (-47, -36, -24, -12, 0)]
