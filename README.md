@@ -22,7 +22,7 @@ GTK4 + Libadwaita + GStreamer. No extra packages needed.
 - **Double-click** a track to play it
 - Tracks continue **in order** automatically, or hit **shuffle** for random playback
 - Previous / Play-Pause / Next buttons on the left and a seek bar (volume is controlled from the system)
-- Real-time spectrum analyzer bars under the seek bar, driven by the actual audio data
+- Real-time spectrum analyzer with 28 log-spaced bars under the seek bar, sampled up to 60×/s from the actual audio, with peak-hold caps
 - Remove the selected track with the Delete key, clear the whole list with one click
 - Playlist is saved automatically (`~/.config/mp3-player/playlist.json`)
 
@@ -73,7 +73,7 @@ GTK4 + Libadwaita + GStreamer. Ekstra paket gerekmez.
 - Çalmak için parçaya **çift tıkla**
 - Parçalar **sırayla** otomatik devam eder, **karışık çal** düğmesiyle rastgele çalar
 - Solda Önceki / Oynat-Duraklat / Sonraki düğmeleri ve süre çubuğu (ses düzeyi sistemden ayarlanır)
-- Müzik çalarken süre çubuğunun altında gerçek ses verisinden beslenen spektrum analizörü çubukları
+- Müzik çalarken süre çubuğunun altında gerçek ses verisinden saniyede ~60 kez örneklenen, 28 logaritmik barlı ve peak tutuculu spektrum
 - Delete tuşuyla seçili parçayı listeden çıkarma, tek tıkla listeyi temizleme
 - Playlist otomatik saklanır (`~/.config/mp3-player/playlist.json`)
 

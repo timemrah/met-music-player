@@ -77,11 +77,78 @@ class TestNoVolumeBar(unittest.TestCase):
 
                 win._on_element(None, FakeMsg())
                 self.assertEqual(len(win._eq_levels), 28)
-                self.assertAlmostEqual(win._eq_levels[0], 0.0)
-                self.assertAlmostEqual(win._eq_levels[1], 0.5)
-                self.assertAlmostEqual(win._eq_levels[2], 0.9)
+                exp0 = M.spec_level(-60.0, 0, 28)
+                exp1 = M.spec_level(-30.0, 1, 28)
+                exp2 = M.spec_level(-6.0, 2, 28)
+                self.assertAlmostEqual(win._eq_levels[0], exp0)
+                self.assertAlmostEqual(win._eq_levels[1], exp1)
+                self.assertAlmostEqual(win._eq_levels[2], exp2)
+                self.assertAlmostEqual(win._eq_peaks[1], exp1)
+                self.assertGreater(win._eq_hold[1], 0.0)
         finally:
             win.close()
+
+
+class TestSpecMapping(unittest.TestCase):
+    def test_zemin_sessiz(self):
+        self.assertEqual(M.spec_level(-60.0, 0, 28), 0.0)
+        self.assertEqual(M.spec_level(-100.0, 27, 28), 0.0)
+        self.assertEqual(M.spec_level(None, 5, 28), 0.0)
+
+    def test_tavan_kirpilir(self):
+        self.assertEqual(M.spec_level(0.0, 0, 28), 1.0)
+        self.assertEqual(M.spec_level(0.0, 27, 28), 1.0)
+
+    def test_tiz_telafisi(self):
+        low = M.spec_level(-36.0, 0, 28)
+        high = M.spec_level(-36.0, 27, 28)
+        self.assertGreater(high, low)
+        self.assertTrue(0.30 < low < 0.36, low)
+        self.assertTrue(0.50 < high < 0.56, high)
+
+    def test_db_arttikca_seviye_artar(self):
+        vals = [M.spec_level(db, 10, 28) for db in (-47, -36, -24, -12, 0)]
+        self.assertEqual(vals, sorted(vals))
+        self.assertGreater(vals[-1], vals[0])
+
+
+class TestPeakStep(unittest.TestCase):
+    def test_yukselince_tutar(self):
+        self.assertEqual(M.peak_step(0.2, 0.0, 0.7, 100.0, 0.016), (0.7, 100.5))
+
+    def test_tutma_suresince_dusmez(self):
+        self.assertEqual(M.peak_step(0.7, 100.5, 0.3, 100.4, 0.016), (0.7, 100.5))
+
+    def test_sonra_yavasca_duser(self):
+        peak, hold = M.peak_step(0.7, 100.5, 0.3, 101.0, 0.25)
+        self.assertAlmostEqual(peak, 0.5)
+        self.assertEqual(hold, 100.5)
+
+    def test_cubuga_degince_durur(self):
+        self.assertEqual(M.peak_step(0.35, 90.0, 0.3, 100.0, 1.0), (0.3, 90.0))
+
+
+class TestLogRebin(unittest.TestCase):
+    def test_uzunluk(self):
+        self.assertEqual(len(M.log_rebin([-60.0] * 256)), 28)
+
+    def test_kisa_girdi_doldurulur(self):
+        self.assertEqual(len(M.log_rebin([-30.0] * 10)), 28)
+
+    def test_tiz_ton_sag_yarida(self):
+        mags = [-60.0] * 256
+        mags[74] = -6.0  # ~6400 Hz
+        bars = M.log_rebin(mags)
+        self.assertAlmostEqual(max(bars), -6.0)
+        loud = [i for i, v in enumerate(bars) if v > -20.0]
+        self.assertTrue(loud and min(loud) > 10, loud)
+
+    def test_pes_ton_sol_yarida(self):
+        mags = [-60.0] * 256
+        mags[3] = -6.0  # ~220 Hz
+        bars = M.log_rebin(mags)
+        loud = [i for i, v in enumerate(bars) if v > -20.0]
+        self.assertTrue(loud and max(loud) < 14, loud)
 
     def test_gercek_spektrum_bagli(self):
         """Ses zincirinde gerçek veri için spectrum öğesi kurulu olmalı."""

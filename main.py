@@ -6,13 +6,14 @@
 - Tekli mp3 dosyaları da sürükle-bırak ile eklenebilir
 - Çift tıklama ile çalma, sıra ile otomatik devam, karışık çalma modu
 - Önceki / Oynat-Duraklat / Sonraki, süre çubuğu (seek)
-- Çalarken gerçek spektrum verisiyle ekolayzer animasyonu
+- Çalarken gerçek spektrum verisiyle (60 FPS hedefli), peak tutuculu ekolayzer
 - Playlist oturumlar arası saklanır (~/.config/mp3-player/playlist.json)
 """
 import json
 import os
 import random
 import sys
+import time
 from pathlib import Path
 
 import gi
@@ -64,6 +65,64 @@ def track_info(path):
         except Exception:
             pass
     return title, duration
+
+
+_SPEC_FLOOR_DB = -48.0
+_SPEC_FALL_PER_SEC = 0.8
+
+
+def spec_level(db, index, bands):
+    """dB büyüklüğünü 0..1 çubuk seviyesine çevirir; tiz bantlara telafi uygular."""
+    try:
+        db = float(db)
+    except (TypeError, ValueError):
+        return 0.0
+    if db <= _SPEC_FLOOR_DB + 1.0:
+        return 0.0
+    base = ((db - _SPEC_FLOOR_DB) / -_SPEC_FLOOR_DB) ** 0.8
+    comp = 1.0 + 0.6 * (index / max(1, bands - 1))
+    return max(0.0, min(1.0, base * comp))
+
+
+def peak_step(peak, hold_until, level, now, dt, fall=_SPEC_FALL_PER_SEC):
+    """Peak-hold: yükselince 0.5 sn tut, sonra yavaşça düş, çubuğa değince dur."""
+    if level >= peak:
+        return level, now + 0.5
+    if now >= hold_until:
+        return max(level, peak - fall * max(0.0, dt)), hold_until
+    return peak, hold_until
+
+
+_LOG_BARS = 28
+_LOG_FMIN = 40.0
+_LOG_FMAX = 16000.0
+_LOG_NYQ = 22050.0
+_LOG_LIN_BANDS = 256
+
+
+def _log_groups(lin_bands=_LOG_LIN_BANDS, bars=_LOG_BARS,
+                fmin=_LOG_FMIN, fmax=_LOG_FMAX, nyq=_LOG_NYQ):
+    edges = [fmin * (fmax / fmin) ** (b / bars) for b in range(bars + 1)]
+    width = nyq / lin_bands
+    groups = []
+    for b in range(bars):
+        idx = [k for k in range(lin_bands)
+               if edges[b] <= (k + 0.5) * width < edges[b + 1]]
+        if not idx:
+            idx = [min(lin_bands - 1, max(0, int((edges[b] + edges[b + 1]) / 2 / width)))]
+        groups.append(idx)
+    return groups
+
+
+_LOG_GROUPS = _log_groups()
+
+
+def log_rebin(mags):
+    """256 lineer bandı 28 logaritmik bara indirir (grup içi tepe değerle)."""
+    mags = list(mags)
+    if len(mags) != _LOG_LIN_BANDS:
+        return (mags[:_LOG_BARS] + [-120.0] * _LOG_BARS)[:_LOG_BARS]
+    return [max(mags[k] for k in grp) for grp in _LOG_GROUPS]
 
 
 class Mp3PlayerWindow(Adw.ApplicationWindow):
@@ -204,7 +263,7 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
         btn_next.connect("clicked", lambda *_: self.play_next(manual=True))
         self.btn_row.append(btn_next)
 
-        # Ekolayzer animasyonu (dekoratif): çalarken hareketli, duraklayınca düz çizgi
+        # Ekolayzer: gerçek spektrum verisi + peak tutucu (yoksa dekoratif mod)
         self.eq_area = Gtk.DrawingArea()
         self.eq_area.set_hexpand(True)
         self.eq_area.set_content_height(64)
@@ -214,6 +273,9 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
         bottom_row.append(self.eq_area)
         self._eq_levels = []
         self._eq_targets = []
+        self._eq_peaks = []
+        self._eq_hold = []
+        self._eq_last_msg_t = None
         GLib.timeout_add(120, self._eq_tick)
 
     def _setup_dnd(self):
@@ -399,8 +461,8 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
             if reg.find_feature("audioconvert", Gst.ElementFactory) is None:
                 return None
             sink = Gst.parse_bin_from_description(
-                "audioconvert ! spectrum name=eq_sp bands=28 "
-                "threshold=-60 interval=100000000 post-messages=true "
+                "audioconvert ! spectrum name=eq_sp bands=256 "
+                "threshold=-48 interval=16666667 post-messages=true "
                 "! audioconvert ! autoaudiosink",
                 True,
             )
@@ -424,10 +486,20 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
             return True
         if not mags:
             return True
-        if len(self._eq_levels) != len(mags):
-            self._eq_levels = [0.0] * len(mags)
-        for i, db in enumerate(mags):
-            self._eq_levels[i] = max(0.0, min(1.0, (float(db) + 60.0) / 60.0))
+        bars = log_rebin(mags)
+        n = len(bars)
+        if len(self._eq_levels) != n:
+            self._eq_levels = [0.0] * n
+            self._eq_peaks = [0.0] * n
+            self._eq_hold = [0.0] * n
+        now = time.monotonic()
+        dt = min(0.1, max(0.0, now - (self._eq_last_msg_t or now)))
+        self._eq_last_msg_t = now
+        for i, db in enumerate(bars):
+            lv = spec_level(db, i, n)
+            self._eq_levels[i] = lv
+            pk, hd = peak_step(self._eq_peaks[i], self._eq_hold[i], lv, now, dt)
+            self._eq_peaks[i], self._eq_hold[i] = pk, hd
         self.eq_area.queue_draw()
         return True
 
@@ -474,8 +546,13 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
             self._eq_fake()
             return True
         # Gerçek veri spectrum mesajlarıyla gelir; duraklayınca çubukları söndür
-        if not self.playing and any(lv > 0.003 for lv in self._eq_levels):
+        n = len(self._eq_levels)
+        if len(self._eq_peaks) != n:
+            self._eq_peaks = [0.0] * n
+        if not self.playing and any(v > 0.003 for v in self._eq_levels + self._eq_peaks):
             self._eq_levels = [max(0.0, lv - 0.08) for lv in self._eq_levels]
+            self._eq_peaks = [max(lv, pk - 0.08)
+                              for lv, pk in zip(self._eq_levels, self._eq_peaks)]
             self.eq_area.queue_draw()
         return True
 
@@ -485,6 +562,8 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
         if len(self._eq_levels) != n:
             self._eq_levels = [0.0] * n
             self._eq_targets = [0.0] * n
+            self._eq_peaks = [0.0] * n
+            self._eq_hold = [0.0] * n
         changed = False
         for i in range(n):
             if self.playing and random.random() < 0.35:
@@ -495,6 +574,7 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
             if abs(lv - self._eq_levels[i]) > 0.002:
                 changed = True
             self._eq_levels[i] = lv
+        self._eq_peaks = list(self._eq_levels)
         if changed or self.playing:
             self.eq_area.queue_draw()
 
@@ -506,12 +586,21 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
         base = height - 8
         span = max(1, base - 16)
         if self.playing:
-            cr.set_source_rgb(0x1C / 255, 0x71 / 255, 0xD8 / 255)
+            bar_rgb = (0x1C / 255, 0x71 / 255, 0xD8 / 255)
+            peak_rgb = (0x77 / 255, 0xAA / 255, 0xE8 / 255)
         else:
-            cr.set_source_rgb(0.6, 0.6, 0.6)
+            bar_rgb = (0.6, 0.6, 0.6)
+            peak_rgb = (0.8, 0.8, 0.8)
+        cr.set_source_rgb(*bar_rgb)
         for i, lv in enumerate(self._eq_levels):
             h = 4 + lv * span
             cr.rectangle(x0 + i * (bar_w + gap), base - h, bar_w, h)
+        cr.fill()
+        peaks = self._eq_peaks if len(self._eq_peaks) == n else [0.0] * n
+        cr.set_source_rgb(*peak_rgb)
+        for i, pk in enumerate(peaks):
+            y = base - pk * span
+            cr.rectangle(x0 + i * (bar_w + gap), y - 1, bar_w, 2)
         cr.fill()
 
     # ---- Olaylar ----
