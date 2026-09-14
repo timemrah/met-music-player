@@ -2,6 +2,10 @@
   <img src="logo.svg" width="128" alt="MP3 Player logo">
 </p>
 
+<p align="center">
+  <img src="screenshot.png" width="600" alt="MP3 Player playing with live spectrum analyzer">
+</p>
+
 <h1 align="center">MP3 Player</h1>
 
 <p align="center">
@@ -22,7 +26,7 @@ GTK4 + Libadwaita + GStreamer. No extra packages needed.
 - **Double-click** a track to play it
 - Tracks continue **in order** automatically, or hit **shuffle** for random playback
 - Previous / Play-Pause / Next buttons on the left and a seek bar (volume is controlled from the system)
-- Real-time spectrum analyzer with 28 log-spaced bars under the seek bar, sampled up to 60×/s from the actual audio, with peak-hold caps
+- Real-time spectrum analyzer under the seek bar: 28 log-spaced bars (30 Hz–16 kHz) sampled up to 60×/s from the actual audio, with peak-hold caps and latency compensation so the bars stay in sync with the sound
 - Remove the selected track with the Delete key, clear the whole list with one click
 - Playlist is saved automatically (`~/.config/mp3-player/playlist.json`)
 
@@ -73,7 +77,7 @@ GTK4 + Libadwaita + GStreamer. Ekstra paket gerekmez.
 - Çalmak için parçaya **çift tıkla**
 - Parçalar **sırayla** otomatik devam eder, **karışık çal** düğmesiyle rastgele çalar
 - Solda Önceki / Oynat-Duraklat / Sonraki düğmeleri ve süre çubuğu (ses düzeyi sistemden ayarlanır)
-- Müzik çalarken süre çubuğunun altında gerçek ses verisinden saniyede ~60 kez örneklenen, 28 logaritmik barlı ve peak tutuculu spektrum
+- Müzik çalarken süre çubuğunun altında gerçek zamanlı spektrum: gerçek ses verisinden saniyede ~60 kez örneklenen 28 logaritmik bar (30 Hz–16 kHz), peak tutucu çizgiler ve sesle eşzaman için gecikme telafisi
 - Delete tuşuyla seçili parçayı listeden çıkarma, tek tıkla listeyi temizleme
 - Playlist otomatik saklanır (`~/.config/mp3-player/playlist.json`)
 
