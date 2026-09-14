@@ -62,29 +62,41 @@ class TestNoVolumeBar(unittest.TestCase):
                 self.assertTrue(win._eq_tick())
                 self.assertEqual(len(win._eq_levels), 28)
             else:
-                # Gerçek mod: seviyeler spectrum mesajıyla gelir (dB -> 0..1)
-                class FakeStruct:
-                    def get_name(self):
-                        return "spectrum"
-
-                    def get_value(self, key):
-                        assert key == "magnitude"
-                        return [-60.0, -30.0, -6.0] + [-60.0] * 25
-
-                class FakeMsg:
-                    def get_structure(self):
-                        return FakeStruct()
-
-                win._on_element(None, FakeMsg())
-                self.assertEqual(len(win._eq_levels), 28)
+                # Gerçek mod: kare gecikmeli uygulanır (dB -> 0..1)
+                mags = [-60.0, -30.0, -6.0] + [-60.0] * 25
+                bars = M.log_rebin(mags)
+                win.playing = True
+                self.assertFalse(win._apply_spec_frame((bars, win._spec_gen)))
                 exp0 = M.spec_level(-60.0, 0, 28)
                 exp1 = M.spec_level(-30.0, 1, 28)
                 exp2 = M.spec_level(-6.0, 2, 28)
+                self.assertEqual(len(win._eq_levels), 28)
                 self.assertAlmostEqual(win._eq_levels[0], exp0)
                 self.assertAlmostEqual(win._eq_levels[1], exp1)
                 self.assertAlmostEqual(win._eq_levels[2], exp2)
                 self.assertAlmostEqual(win._eq_peaks[1], exp1)
                 self.assertGreater(win._eq_hold[1], 0.0)
+        finally:
+            win.close()
+
+    def test_spec_gecikme_uygulama(self):
+        """Bayat nesil ve duraklatılmış kare düşürülür."""
+        app = M.Mp3PlayerApp()
+        win = M.Mp3PlayerWindow(app)
+        try:
+            if win._spectrum is None:
+                self.skipTest("spectrum kurulu değil")
+            bars = M.log_rebin([-30.0] * 256)
+            win.playing = True
+            win._apply_spec_frame((bars, win._spec_gen))
+            before = list(win._eq_levels)
+            self.assertGreater(max(before), 0.0)
+            win._apply_spec_frame((bars, win._spec_gen + 999))
+            self.assertEqual(win._eq_levels, before)
+            win.playing = False
+            win._eq_levels = [0.0] * 28
+            win._apply_spec_frame((bars, win._spec_gen))
+            self.assertEqual(win._eq_levels, [0.0] * 28)
         finally:
             win.close()
 
@@ -104,7 +116,7 @@ class TestSpecMapping(unittest.TestCase):
         high = M.spec_level(-36.0, 27, 28)
         self.assertGreater(high, low)
         self.assertTrue(0.30 < low < 0.36, low)
-        self.assertTrue(0.50 < high < 0.56, high)
+        self.assertTrue(0.70 < high < 0.75, high)
 
     def test_db_arttikca_seviye_artar(self):
         vals = [M.spec_level(db, 10, 28) for db in (-47, -36, -24, -12, 0)]

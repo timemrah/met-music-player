@@ -80,7 +80,7 @@ def spec_level(db, index, bands):
     if db <= _SPEC_FLOOR_DB + 1.0:
         return 0.0
     base = ((db - _SPEC_FLOOR_DB) / -_SPEC_FLOOR_DB) ** 0.8
-    comp = 1.0 + 0.6 * (index / max(1, bands - 1))
+    comp = 1.0 + 1.2 * (index / max(1, bands - 1))
     return max(0.0, min(1.0, base * comp))
 
 
@@ -95,7 +95,7 @@ def peak_step(peak, hold_until, level, now, dt, fall=_SPEC_FALL_PER_SEC):
 
 _LOG_BARS = 28
 _LOG_FMIN = 40.0
-_LOG_FMAX = 16000.0
+_LOG_FMAX = 12000.0
 _LOG_NYQ = 22050.0
 _LOG_LIN_BANDS = 256
 
@@ -147,6 +147,9 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
         self.current = -1
         self.playing = False
         self.shuffle = False
+        self._av_delay = 0.35
+        self._spec_gen = 0
+        self._tick_n = 0
         self._updating_scale = False
         self._duration_ns = 0
 
@@ -275,7 +278,8 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
         self._eq_targets = []
         self._eq_peaks = []
         self._eq_hold = []
-        self._eq_last_msg_t = None
+        self._eq_last_apply_t = None
+        self._last_stream_t = None
         GLib.timeout_add(120, self._eq_tick)
 
     def _setup_dnd(self):
@@ -385,6 +389,7 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
     def _load_current(self, play=True):
         if not (0 <= self.current < len(self.playlist)):
             return
+        self._spec_gen += 1
         uri = Gst.filename_to_uri(self.playlist[self.current]["path"])
         self.player.set_state(Gst.State.NULL)
         self.player.set_property("uri", uri)
@@ -487,21 +492,45 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
         if not mags:
             return True
         bars = log_rebin(mags)
+        if st.has_field("stream-time"):
+            try:
+                self._last_stream_t = int(st.get_value("stream-time"))
+            except (TypeError, ValueError):
+                pass
+        GLib.timeout_add(int(self._av_delay * 1000), self._apply_spec_frame,
+                         (bars, self._spec_gen))
+        return True
+
+    def _apply_spec_frame(self, payload):
+        """Gecikmiş spektrum karesini uygular; bayat/duraklatılmış kareyi düşürür."""
+        bars, gen = payload
+        if gen != self._spec_gen or not self.playing or self._spectrum is None:
+            return False
         n = len(bars)
         if len(self._eq_levels) != n:
             self._eq_levels = [0.0] * n
             self._eq_peaks = [0.0] * n
             self._eq_hold = [0.0] * n
         now = time.monotonic()
-        dt = min(0.1, max(0.0, now - (self._eq_last_msg_t or now)))
-        self._eq_last_msg_t = now
+        dt = min(0.1, max(0.0, now - (self._eq_last_apply_t or now)))
+        self._eq_last_apply_t = now
         for i, db in enumerate(bars):
             lv = spec_level(db, i, n)
             self._eq_levels[i] = lv
             pk, hd = peak_step(self._eq_peaks[i], self._eq_hold[i], lv, now, dt)
             self._eq_peaks[i], self._eq_hold[i] = pk, hd
         self.eq_area.queue_draw()
-        return True
+        return False
+
+    def _refresh_av_delay(self):
+        """Analiz-işitme önceliğini konum farkından ölçüp yumuşatır."""
+        if self._last_stream_t is None:
+            return
+        ok, pos = self.player.query_position(Gst.Format.TIME)
+        if not ok:
+            return
+        sample = max(0.0, min(1.5, (self._last_stream_t - pos) / Gst.SECOND))
+        self._av_delay += 0.3 * (sample - self._av_delay)
 
     # ---- Süre çubuğu / ses ----
     def _position_sec(self):
@@ -516,6 +545,7 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
         self.player.seek_simple(
             Gst.Format.TIME, Gst.SeekFlags.FLUSH | Gst.SeekFlags.KEY_UNIT, ns
         )
+        self._spec_gen += 1
 
     def _on_seek(self, _scale, _scroll, value):
         if self._updating_scale:
@@ -538,6 +568,9 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
             track = self.playlist[self.current] if 0 <= self.current < len(self.playlist) else None
             if track and track["duration"]:
                 self.lbl_dur.set_text(fmt_time(track["duration"]))
+        self._tick_n += 1
+        if self.playing and self._tick_n % 4 == 0:
+            self._refresh_av_delay()
         return True
 
     # ---- Ekolayzer animasyonu ----
