@@ -1,6 +1,7 @@
 """MP3 Çalar odak testleri: python3 -m unittest discover -s tests -v"""
 import os
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -122,6 +123,38 @@ class TestSpecMapping(unittest.TestCase):
         vals = [M.spec_level(db, 10, 28) for db in (-47, -36, -24, -12, 0)]
         self.assertEqual(vals, sorted(vals))
         self.assertGreater(vals[-1], vals[0])
+
+
+class TestDurationFallback(unittest.TestCase):
+    def test_broken_xing_falls_back(self):
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
+            f.write(b"\x00" * 100000)
+            path = f.name
+        try:
+
+            class FakeInfo:
+                length = 0.0
+                bitrate = 256000
+
+            self.assertAlmostEqual(M.resolve_duration(path, FakeInfo()), 100000 * 8 / 256000)
+        finally:
+            os.unlink(path)
+
+    def test_valid_length_kept(self):
+
+        class FakeInfo:
+            length = 180.1
+            bitrate = 256000
+
+        self.assertEqual(M.resolve_duration("/yok.mp3", FakeInfo()), 180.1)
+
+    def test_no_bitrate_none(self):
+
+        class FakeInfo:
+            length = 0.0
+            bitrate = 0
+
+        self.assertIsNone(M.resolve_duration("/yok.mp3", FakeInfo()))
 
 
 class TestPeakStep(unittest.TestCase):

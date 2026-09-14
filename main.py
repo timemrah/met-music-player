@@ -47,6 +47,20 @@ def fmt_time(seconds):
     return f"{m}:{s:02d}"
 
 
+def resolve_duration(path, info):
+    """Xing başlığı bozuksa (0 süre) dosya boyutu/bit hızından tahmin eder."""
+    length = getattr(info, "length", 0) or 0
+    if length > 0:
+        return float(length)
+    bitrate = getattr(info, "bitrate", 0) or 0
+    if bitrate > 0:
+        try:
+            return os.path.getsize(path) * 8 / bitrate
+        except OSError:
+            return None
+    return None
+
+
 def track_info(path):
     """MP3 dosyasından başlık ve süre bilgisini okur."""
     title = Path(path).stem
@@ -55,7 +69,7 @@ def track_info(path):
         try:
             audio = MP3(path)
             if audio.info is not None:
-                duration = audio.info.length
+                duration = resolve_duration(path, audio.info)
             tags = audio.tags
             if tags is not None:
                 for key in ("TIT2", "TIT"):
