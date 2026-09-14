@@ -10,7 +10,7 @@
 
 <p align="center">
   A minimal, modern MP3 player for Debian 13 + GNOME.<br>
-  No equalizer, no animations — just your music.
+  No clutter — just your music and a live spectrum.
 </p>
 
 ---
@@ -39,8 +39,9 @@ python3 main.py
 ```
 
 Requirements (pre-installed on Debian 13): `python3-gi`,
-`gir1.2-gtk-4.0`, `gir1.2-adw-1`, `gstreamer1.0-plugins-good`,
-`gstreamer1.0-plugins-bad`, `gstreamer1.0-plugins-ugly`, `python3-mutagen`.
+`gir1.2-gtk-4.0`, `gir1.2-adw-1`, `gir1.2-gstreamer-1.0`,
+`gstreamer1.0-plugins-good`, `gstreamer1.0-plugins-bad`,
+`gstreamer1.0-plugins-ugly`, `python3-mutagen`.
 
 ### Add to the GNOME menu (recommended)
 
@@ -81,7 +82,7 @@ GTK4 + Libadwaita + GStreamer. Ekstra paket gerekmez.
 - Delete tuşuyla seçili parçayı listeden çıkarma, tek tıkla listeyi temizleme
 - Playlist otomatik saklanır (`~/.config/mp3-player/playlist.json`)
 
-Ekolayzer ve animasyon yok — bilerek sade tutuldu.
+Karışık ayar ekranları yok — arayüz bilerek sade tutuldu; alttaki spektrum çubukları çalan müziğin gerçek frekans analizidir.
 
 ### Çalıştırma
 
@@ -92,8 +93,9 @@ python3 main.py
 ```
 
 Gerekenler (Debian 13'te öntanımlı kurulu): `python3-gi`,
-`gir1.2-gtk-4.0`, `gir1.2-adw-1`, `gstreamer1.0-plugins-good`,
-`gstreamer1.0-plugins-bad`, `gstreamer1.0-plugins-ugly`, `python3-mutagen`.
+`gir1.2-gtk-4.0`, `gir1.2-adw-1`, `gir1.2-gstreamer-1.0`,
+`gstreamer1.0-plugins-good`, `gstreamer1.0-plugins-bad`,
+`gstreamer1.0-plugins-ugly`, `python3-mutagen`.
 
 ### GNOME menüsüne ekleme (önerilir)
 
