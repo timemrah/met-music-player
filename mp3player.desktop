@@ -2,7 +2,7 @@
 Name=MP3 Çalar
 Comment=Sade modern MP3 çalar (playlist, sürükle-bırak, karışık çalma)
 Exec=mp3-player
-Icon=audio-x-generic
+Icon=mp3-player
 Terminal=false
 Type=Application
 Categories=Audio;Music;Player;

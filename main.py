@@ -69,6 +69,7 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
     def __init__(self, app):
         super().__init__(application=app)
         self.set_title("MP3 Çalar")
+        self.set_icon_name("mp3-player")
         self.set_default_size(720, 540)
 
         Gst.init(None)

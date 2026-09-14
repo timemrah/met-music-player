@@ -15,6 +15,15 @@ class TestFormat(unittest.TestCase):
         self.assertEqual(M.fmt_time(None), "--:--")
 
 
+class TestLogo(unittest.TestCase):
+    def test_logo_svg_gecerli(self):
+        import xml.etree.ElementTree as ET
+        path = os.path.join(os.path.dirname(__file__), "..", "logo.svg")
+        self.assertTrue(os.path.isfile(path), "logo.svg yok")
+        root = ET.parse(path).getroot()
+        self.assertTrue(root.tag.endswith("svg"), root.tag)
+
+
 @unittest.skipUnless(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"),
                      "ekran yok, arayüz testi atlanıyor")
 class TestNoVolumeBar(unittest.TestCase):

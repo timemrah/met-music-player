@@ -1,5 +1,7 @@
 # MP3 Çalar
 
+![logo](logo.svg)
+
 Debian 13 + GNOME için sade, modern MP3 çalar. Ekstra paket gerekmez —
 sistemde zaten kurulu olan GTK4 + Libadwaita + GStreamer kullanır.
 
