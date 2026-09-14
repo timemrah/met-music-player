@@ -6,6 +6,7 @@
 - Tekli mp3 dosyaları da sürükle-bırak ile eklenebilir
 - Çift tıklama ile çalma, sıra ile otomatik devam, karışık çalma modu
 - Önceki / Oynat-Duraklat / Sonraki, süre çubuğu (seek)
+- Çalarken süre çubuğu altında ekolayzer animasyonu
 - Playlist oturumlar arası saklanır (~/.config/mp3-player/playlist.json)
 """
 import json
@@ -177,22 +178,41 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
         self.lbl_dur.add_css_class("dim-label")
         seek_row.append(self.lbl_dur)
 
-        btn_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        btn_row.set_halign(Gtk.Align.CENTER)
-        controls.append(btn_row)
+        bottom_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        controls.append(bottom_row)
+
+        self.btn_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        self.btn_row.set_halign(Gtk.Align.START)
+        self.btn_row.set_valign(Gtk.Align.CENTER)
+        bottom_row.append(self.btn_row)
 
         btn_prev = Gtk.Button(icon_name="media-skip-backward-symbolic", tooltip_text="Önceki")
+        btn_prev.set_size_request(52, 64)
         btn_prev.connect("clicked", lambda *_: self.play_prev())
-        btn_row.append(btn_prev)
+        self.btn_row.append(btn_prev)
 
         self.btn_play = Gtk.Button(icon_name="media-playback-start-symbolic", tooltip_text="Oynat / Duraklat")
+        self.btn_play.set_size_request(60, 64)
         self.btn_play.add_css_class("suggested-action")
         self.btn_play.connect("clicked", lambda *_: self.toggle_play())
-        btn_row.append(self.btn_play)
+        self.btn_row.append(self.btn_play)
 
         btn_next = Gtk.Button(icon_name="media-skip-forward-symbolic", tooltip_text="Sonraki")
+        btn_next.set_size_request(52, 64)
         btn_next.connect("clicked", lambda *_: self.play_next(manual=True))
-        btn_row.append(btn_next)
+        self.btn_row.append(btn_next)
+
+        # Ekolayzer animasyonu (dekoratif): çalarken hareketli, duraklayınca düz çizgi
+        self.eq_area = Gtk.DrawingArea()
+        self.eq_area.set_hexpand(True)
+        self.eq_area.set_content_height(64)
+        self.eq_area.set_valign(Gtk.Align.CENTER)
+        self.eq_area.add_css_class("card")
+        self.eq_area.set_draw_func(self._draw_eq, None)
+        bottom_row.append(self.eq_area)
+        self._eq_levels = []
+        self._eq_targets = []
+        GLib.timeout_add(120, self._eq_tick)
 
     def _setup_dnd(self):
         drop = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
@@ -404,6 +424,42 @@ class Mp3PlayerWindow(Adw.ApplicationWindow):
             if track and track["duration"]:
                 self.lbl_dur.set_text(fmt_time(track["duration"]))
         return True
+
+    # ---- Ekolayzer animasyonu ----
+    def _eq_tick(self):
+        n = 28
+        if len(self._eq_levels) != n:
+            self._eq_levels = [0.0] * n
+            self._eq_targets = [0.0] * n
+        changed = False
+        for i in range(n):
+            if self.playing and random.random() < 0.35:
+                self._eq_targets[i] = random.random()
+            elif not self.playing:
+                self._eq_targets[i] = 0.0
+            lv = self._eq_levels[i] + (self._eq_targets[i] - self._eq_levels[i]) * 0.45
+            if abs(lv - self._eq_levels[i]) > 0.002:
+                changed = True
+            self._eq_levels[i] = lv
+        if changed or self.playing:
+            self.eq_area.queue_draw()
+        return True
+
+    def _draw_eq(self, _area, cr, width, height, _data):
+        n = len(self._eq_levels) or 1
+        gap, bar_w = 6, 7
+        total = n * (bar_w + gap) - gap
+        x0 = max(8, (width - total) / 2)
+        base = height - 8
+        span = max(1, base - 16)
+        if self.playing:
+            cr.set_source_rgb(0x1C / 255, 0x71 / 255, 0xD8 / 255)
+        else:
+            cr.set_source_rgb(0.6, 0.6, 0.6)
+        for i, lv in enumerate(self._eq_levels):
+            h = 4 + lv * span
+            cr.rectangle(x0 + i * (bar_w + gap), base - h, bar_w, h)
+        cr.fill()
 
     # ---- Olaylar ----
     def _on_drop(self, _target, value, _x, _y):

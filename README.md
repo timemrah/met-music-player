@@ -21,7 +21,8 @@ GTK4 + Libadwaita + GStreamer. No extra packages needed.
 - **Playlist** — drag & drop a folder onto the window and every MP3 inside is added (single MP3 files work too)
 - **Double-click** a track to play it
 - Tracks continue **in order** automatically, or hit **shuffle** for random playback
-- Previous / Play-Pause / Next buttons and a seek bar (volume is controlled from the system)
+- Previous / Play-Pause / Next buttons on the left and a seek bar (volume is controlled from the system)
+- Decorative equalizer animation under the seek bar while music plays
 - Remove the selected track with the Delete key, clear the whole list with one click
 - Playlist is saved automatically (`~/.config/mp3-player/playlist.json`)
 
@@ -71,7 +72,8 @@ GTK4 + Libadwaita + GStreamer. Ekstra paket gerekmez.
 - **Playlist** — klasörü pencereye **sürükle-bırak**, içindeki tüm MP3'ler listeye eklenir (tekli MP3 dosyaları da olur)
 - Çalmak için parçaya **çift tıkla**
 - Parçalar **sırayla** otomatik devam eder, **karışık çal** düğmesiyle rastgele çalar
-- Önceki / Oynat-Duraklat / Sonraki düğmeleri ve süre çubuğu (ses düzeyi sistemden ayarlanır)
+- Solda Önceki / Oynat-Duraklat / Sonraki düğmeleri ve süre çubuğu (ses düzeyi sistemden ayarlanır)
+- Müzik çalarken süre çubuğunun altında dekoratif ekolayzer animasyonu
 - Delete tuşuyla seçili parçayı listeden çıkarma, tek tıkla listeyi temizleme
 - Playlist otomatik saklanır (`~/.config/mp3-player/playlist.json`)
 

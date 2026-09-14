@@ -48,6 +48,20 @@ class TestNoVolumeBar(unittest.TestCase):
         finally:
             win.close()
 
+    def test_eq_duzeni(self):
+        """Butonlar solda, sağda ekolayzer alanı olmalı."""
+        app = M.Mp3PlayerApp()
+        win = M.Mp3PlayerWindow(app)
+        try:
+            self.assertIsInstance(win.eq_area, M.Gtk.DrawingArea)
+            self.assertEqual(win.btn_row.get_halign(), M.Gtk.Align.START)
+            self.assertTrue(win._eq_tick())
+            win.playing = True
+            self.assertTrue(win._eq_tick())
+            self.assertEqual(len(win._eq_levels), 28)
+        finally:
+            win.close()
+
 
 if __name__ == "__main__":
     unittest.main()
