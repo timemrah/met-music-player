@@ -1,0 +1,26 @@
+Source: met-music-player
+Section: sound
+Priority: optional
+Maintainer: Mehmet Emrah TUNÇEL <timemrah@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://github.com/timemrah/met-music-player
+
+Package: met-music-player
+Architecture: all
+Depends: ${misc:Depends},
+         python3,
+         python3-gi,
+         gir1.2-gtk-4.0,
+         gir1.2-adw-1,
+         gir1.2-gstreamer-1.0,
+         gstreamer1.0-plugins-good,
+         gstreamer1.0-plugins-bad,
+         gstreamer1.0-plugins-ugly,
+         python3-mutagen
+Description: Minimal modern MP3 player (GTK4 + Libadwaita + GStreamer)
+ MET Music Player is a minimal MP3 player with drag-and-drop playlist,
+ shuffle mode, seek bar and a live spectrum analyzer.
+ Built on the system GTK4 + Libadwaita + GStreamer stack, no bundled
+ libraries.

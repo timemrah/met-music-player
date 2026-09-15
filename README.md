@@ -30,7 +30,34 @@ GTK4 + Libadwaita + GStreamer. No extra packages needed.
 - Remove the selected track with the Delete key, clear the whole list with one click
 - Playlist is saved automatically (`~/.config/mp3-player/playlist.json`)
 
-### Run
+### Download & install (recommended)
+
+Get the latest release from
+[GitHub Releases](https://github.com/timemrah/met-music-player/releases):
+
+- **Debian / Ubuntu** — download the `.deb` and run:
+  ```sh
+  sudo apt install ./met-music-player_*.deb
+  ```
+- **Fedora** — download the `.rpm` and run:
+  ```sh
+  sudo dnf install ./met-music-player-*.rpm
+  ```
+- **Arch** — install from the AUR:
+  ```sh
+  yay -S met-music-player
+  ```
+- **Any distro (portable)** — download the `.AppImage`, make it executable
+  and run it (needs FUSE: `sudo apt install libfuse2` on older systems):
+  ```sh
+  chmod +x MET-Music-Player-*.AppImage
+  ./MET-Music-Player-*.AppImage
+  ```
+
+After installing, find "MET Music Player" in the applications menu or run
+`mp3-player` from a terminal.
+
+### Run from source
 
 ```sh
 ./run.sh
@@ -84,7 +111,35 @@ GTK4 + Libadwaita + GStreamer. Ekstra paket gerekmez.
 
 Karışık ayar ekranları yok — arayüz bilerek sade tutuldu; alttaki spektrum çubukları çalan müziğin gerçek frekans analizidir.
 
-### Çalıştırma
+### İndir & kur (önerilir)
+
+Son sürümü [GitHub Releases](https://github.com/timemrah/met-music-player/releases)
+sayfasından alın:
+
+- **Debian / Ubuntu** — `.deb` dosyasını indirip çalıştırın:
+  ```sh
+  sudo apt install ./met-music-player_*.deb
+  ```
+- **Fedora** — `.rpm` dosyasını indirip çalıştırın:
+  ```sh
+  sudo dnf install ./met-music-player-*.rpm
+  ```
+- **Arch** — AUR'dan kurun:
+  ```sh
+  yay -S met-music-player
+  ```
+- **Taşınabilir (tüm dağıtımlar)** — `.AppImage` dosyasını indirip
+  çalıştırılabilir yapın (eski sistemlerde FUSE gerekir:
+  `sudo apt install libfuse2`):
+  ```sh
+  chmod +x MET-Music-Player-*.AppImage
+  ./MET-Music-Player-*.AppImage
+  ```
+
+Kurulumdan sonra uygulamalar menüsünde "MET Music Player" bulunur;
+uçbirimden `mp3-player` komutuyla da çalışır.
+
+### Kaynaktan çalıştırma
 
 ```sh
 ./run.sh

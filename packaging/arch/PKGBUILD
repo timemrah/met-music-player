@@ -1,0 +1,35 @@
+# Maintainer: Mehmet Emrah TUNÇEL <timemrah@gmail.com>
+# AUR'a gönderim:
+#   1. Sürümde pkgver'ı etikete eşitle, `updpkgsums && makepkg --printsrcinfo > .SRCINFO` çalıştır.
+#   2. Ayrı bir AUR deposuna (ssh://aur@aur.archlinux.org/met-music-player.git)
+#      PKGBUILD + .SRCINFO dosyalarını koyup `git push` yap.
+pkgname=met-music-player
+pkgver=1.0.0
+pkgrel=1
+pkgdesc='Minimal modern MP3 player (GTK4 + Libadwaita + GStreamer)'
+arch=('any')
+url='https://github.com/timemrah/met-music-player'
+license=('MIT')
+depends=('python'
+         'python-gobject'
+         'gtk4'
+         'libadwaita'
+         'gstreamer'
+         'gst-plugins-base'
+         'gst-plugins-good'
+         'gst-plugins-bad'
+         'gst-plugins-ugly'
+         'python-mutagen')
+optdepends=('gst-plugin-pipewire: PipeWire üzerinden ses çıkışı')
+source=("$pkgname-$pkgver.tar.gz::https://github.com/timemrah/met-music-player/archive/refs/tags/v$pkgver.tar.gz")
+# Sürüm tarball'ı etiket anında oluştuğu için buraya `updpkgsums` çıktısı yazılır.
+sha256sums=('SKIP')
+
+package() {
+  install -D -m0755 main.py "$pkgdir/usr/share/met-music-player/main.py"
+  install -D -m0644 logo.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/mp3-player.svg"
+  install -D -m0644 mp3player.desktop "$pkgdir/usr/share/applications/mp3player.desktop"
+  install -D -m0644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  mkdir -p "$pkgdir/usr/bin"
+  ln -s /usr/share/met-music-player/main.py "$pkgdir/usr/bin/mp3-player"
+}

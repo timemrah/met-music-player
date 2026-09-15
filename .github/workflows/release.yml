@@ -1,0 +1,112 @@
+# Sürüm akışı:
+#   1. debian/changelog, packaging/fedora/*.spec ve packaging/arch/PKGBUILD
+#      sürümlerini yeni numaraya eşitle.
+#   2. `git tag vX.Y.Z && git push --tags` → .deb + .rpm + .AppImage derlenir,
+#      GitHub Release'e eklenir.
+# Her itişte (sürüm dışı): .deb ve .rpm derlenerek paketleme çürümesi yakalanır.
+name: Release
+
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  deb:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bağımlılıklar
+        run: sudo apt-get update && sudo apt-get install -y debhelper
+      - name: Sürüm-etiket uyumu (yalnızca etiketlerde)
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          PKG_VER="$(dpkg-parsechangelog -S Version)"
+          [ "$PKG_VER" = "$VER-1" ] || {
+            echo "debian/changelog ($PKG_VER) etikete ($VER) uymuyor"; exit 1; }
+      - name: Derle
+        run: dpkg-buildpackage -us -uc -b
+      - name: Artefaktı topla
+        run: mv ../*.deb .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb
+          path: '*.deb'
+
+  rpm:
+    runs-on: ubuntu-24.04
+    container: fedora:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bağımlılıklar
+        run: dnf install -y rpm-build curl
+      - name: Derle
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VER="${GITHUB_REF_NAME#v}"
+          else
+            VER="$(grep -m1 '^Version:' packaging/fedora/met-music-player.spec | awk '{print $2}')"
+          fi
+          mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+          curl -L -o ~/rpmbuild/SOURCES/v"$VER".tar.gz \
+            "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/archive/refs/tags/v$VER.tar.gz" \
+          || git archive --format=tar.gz --prefix=met-music-player-"$VER"/ \
+               -o ~/rpmbuild/SOURCES/v"$VER".tar.gz HEAD
+          cp packaging/fedora/met-music-player.spec ~/rpmbuild/SPECS/
+          rpmbuild -bb --define "version $VER" ~/rpmbuild/SPECS/met-music-player.spec
+          cp ~/rpmbuild/RPMS/noarch/*.rpm .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rpm
+          path: '*.rpm'
+
+  appimage:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bağımlılıklar
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y squashfs-tools zsync desktop-file-utils patchelf python3-pip
+          pip install --break-system-packages appimage-builder
+      - name: Sürümü tarife yaz
+        # 4 boşluk girintili `version:` satırı = app_info sürümü (en üstteki
+        # `version: 1` şema sürümüdür, değişmemelidir).
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          sed -i "s/^    version:.*/    version: $VER/" packaging/appimage/AppImageBuilder.yml
+          grep -n '^    version:' packaging/appimage/AppImageBuilder.yml
+      - name: Derle
+        working-directory: packaging/appimage
+        run: sudo appimage-builder --recipe AppImageBuilder.yml --skip-test
+      - name: Artefaktı topla
+        run: mv packaging/appimage/*.AppImage packaging/appimage/*.zsync ./
+      - uses: actions/upload-artifact@v4
+        with:
+          name: appimage
+          path: |
+            *.AppImage
+            *.zsync
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [deb, rpm, appimage]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            *.deb
+            *.rpm
+            *.AppImage
+            *.zsync

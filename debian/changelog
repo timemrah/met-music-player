@@ -1,0 +1,6 @@
+met-music-player (1.0.0-1) unstable; urgency=medium
+
+  * İlk sürüm: sürükle-bırak playlist, karışık çalma, süre çubuğu,
+    canlı spektrum analizörü.
+
+ -- Mehmet Emrah TUNÇEL <timemrah@gmail.com>  Mon, 15 Sep 2026 12:00:00 +0300

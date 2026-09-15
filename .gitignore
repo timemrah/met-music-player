@@ -1,2 +1,15 @@
 __pycache__/
 *.pyc
+# Paketleme çıktıları
+*.deb
+*.rpm
+*.AppImage
+*.zsync
+AppDir/
+packaging/appimage/AppDir/
+appimage-builder-cache/
+debian/files
+debian/*.log
+debian/*.substvars
+debian/.debhelper
+debian/met-music-player/

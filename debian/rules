@@ -1,0 +1,12 @@
+#!/usr/bin/make -f
+%:
+	dh $@
+
+override_dh_install:
+	dh_install
+	# Simgeyi yeni adıyla kur (dh_install yeniden adlandıramaz)
+	install -D -m 644 logo.svg debian/met-music-player/usr/share/icons/hicolor/scalable/apps/mp3-player.svg
+	# Uçbirim komutu: /usr/bin/mp3-player -> ../share/met-music-player/main.py
+	# (main.py çalıştırılabilir bitine sahiptir, shebang ile doğrudan koşar)
+	mkdir -p debian/met-music-player/usr/bin
+	ln -sf /usr/share/met-music-player/main.py debian/met-music-player/usr/bin/mp3-player
