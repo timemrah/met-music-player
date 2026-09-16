@@ -31,7 +31,7 @@ system GTK4 + Libadwaita + GStreamer stack and bundles no libraries.
 %install
 install -D -m 0755 main.py %{buildroot}%{_datadir}/met-music-player/main.py
 install -D -m 0644 logo.svg %{buildroot}%{_datadir}/icons/hicolor/scalable/apps/mp3-player.svg
-install -D -m 0644 mp3player.desktop %{buildroot}%{_datadir}/applications/mp3player.desktop
+install -D -m 0644 com.emrah.mp3player.desktop %{buildroot}%{_datadir}/applications/com.emrah.mp3player.desktop
 install -D -m 0644 LICENSE %{buildroot}%{_licensedir}/%{name}/LICENSE
 mkdir -p %{buildroot}%{_bindir}
 ln -s %{_datadir}/met-music-player/main.py %{buildroot}%{_bindir}/mp3-player
@@ -40,7 +40,7 @@ ln -s %{_datadir}/met-music-player/main.py %{buildroot}%{_bindir}/mp3-player
 %{_bindir}/mp3-player
 %{_datadir}/met-music-player/main.py
 %{_datadir}/icons/hicolor/scalable/apps/mp3-player.svg
-%{_datadir}/applications/mp3player.desktop
+%{_datadir}/applications/com.emrah.mp3player.desktop
 %{_licensedir}/%{name}/LICENSE
 
 %changelog

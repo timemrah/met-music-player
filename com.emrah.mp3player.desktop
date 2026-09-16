@@ -3,6 +3,7 @@ Name=MET Music Player
 Comment=Sade modern müzik çalar (playlist, sürükle-bırak, karışık çalma)
 Exec=mp3-player
 Icon=mp3-player
+StartupWMClass=com.emrah.mp3player
 Terminal=false
 Type=Application
 Categories=Audio;Music;Player;

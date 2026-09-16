@@ -1,2 +1,2 @@
 main.py usr/share/met-music-player
-mp3player.desktop usr/share/applications
+com.emrah.mp3player.desktop usr/share/applications
